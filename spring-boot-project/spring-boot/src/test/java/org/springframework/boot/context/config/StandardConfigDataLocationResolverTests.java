@@ -26,6 +26,7 @@ import org.junit.jupiter.api.Test;
 import org.springframework.boot.context.properties.bind.Binder;
 import org.springframework.boot.env.PropertiesPropertySourceLoader;
 import org.springframework.boot.logging.DeferredLogs;
+import org.springframework.core.env.Environment;
 import org.springframework.core.env.PropertySource;
 import org.springframework.core.io.ClassPathResource;
 import org.springframework.core.io.DefaultResourceLoader;
@@ -370,6 +371,28 @@ class StandardConfigDataLocationResolverTests {
 			.isThrownBy(() -> this.resolver.resolveProfileSpecific(this.context, location, profiles))
 			.withMessageStartingWith(
 					"Invalid profile 'dev*test': must contain only letters or digits or '-' or '_'");
+	}
+
+	@Test
+	void resolveProfileSpecific_WhenProfileContainsEmptyString_ThrowsException() {
+		ConfigDataLocation location = ConfigDataLocation.of("classpath:/configdata/properties/");
+		Environment mockEnv = mock(Environment.class);
+		given(mockEnv.getActiveProfiles()).willReturn(new String[]{" "});
+		Profiles profiles = new Profiles(mockEnv, this.environmentBinder, Collections.emptyList());
+		assertThatIllegalStateException()
+				.isThrownBy(() -> this.resolver.resolveProfileSpecific(this.context, location, profiles))
+				.withMessageStartingWith("Profile must contain text");
+	}
+
+	@Test
+	void resolveProfileSpecific_WhenProfileIsNull_ThrowsException() {
+		ConfigDataLocation location = ConfigDataLocation.of("classpath:/configdata/properties/");
+		Environment mockEnv = mock(Environment.class);
+		given(mockEnv.getActiveProfiles()).willReturn(null);
+		Profiles profiles = new Profiles(mockEnv, this.environmentBinder, Collections.emptyList());
+		assertThatIllegalStateException()
+				.isThrownBy(() -> this.resolver.resolveProfileSpecific(this.context, location, profiles))
+				.withMessageStartingWith("Profile must contain text");
 	}
 
 	private String filePath(String... components) {
